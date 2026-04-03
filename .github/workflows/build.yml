@@ -29,30 +29,34 @@ jobs:
         autoconf automake libtool m4 pkg-config cmake build-essential \
         libffi-dev libssl-dev python3-setuptools
 
-    - name: Install Buildozer
+    - name: Install Python tools
       run: |
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36 buildozer
 
-    - name: Magic License Hack (The Nuclear Option)
+    # ✅ Initialize buildozer environment
+    - name: Initialize Buildozer
       run: |
-        # 1. Trigger Buildozer to CREATE the folders first (it will fail, that's fine)
-        buildozer android pimpl || true
-        
-        # 2. Find EVERY 'licenses' directory in the home folder and inject the keys
-        # This covers ~/.buildozer/android/platform/android-sdk/ and any variants
-        for dir in $(find $HOME -type d -name "android-sdk" 2>/dev/null); do
-          echo "Injecting licenses into $dir"
-          mkdir -p "$dir/licenses"
-          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$dir/licenses/android-sdk-license"
-          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n5046675910430d4d256e4a95e34a3f12ca1638df" > "$dir/licenses/android-sdk-preview-license"
-        done
+        buildozer init || true
 
+    # 🔥 FIX: Force Android license acceptance
+    - name: Inject Android Licenses
+      run: |
+        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+
+        echo "84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+        echo "5046675910430d4d256e4a95e34a3f12ca1638df" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+
+    # 🚀 Build APK
     - name: Build APK
       run: |
-        # We use 'yes' to auto-reply to the prompt if the injection somehow missed
         yes | buildozer -v android debug
 
+    # 📦 Upload APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
