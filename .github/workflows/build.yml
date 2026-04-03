@@ -7,6 +7,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROIDAPI: "33"
+      ANDROIDMINAPI: "21"
+      ANDROIDNDK: "25b"
+      ANDROIDSDK: "/usr/local/lib/android/sdk"
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -22,6 +28,24 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    # 🔥 INSTALL ANDROID SDK PROPERLY (SYSTEM LEVEL)
+    - name: Install Android SDK
+      run: |
+        sudo mkdir -p /usr/local/lib/android/sdk/cmdline-tools
+        cd /usr/local/lib/android/sdk/cmdline-tools
+
+        sudo curl -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+        sudo unzip tools.zip
+        sudo mv cmdline-tools latest
+
+        export PATH=/usr/local/lib/android/sdk/cmdline-tools/latest/bin:$PATH
+
+        yes | sdkmanager --licenses
+
+        sdkmanager "platform-tools" \
+                   "platforms;android-33" \
+                   "build-tools;33.0.2"
+
     - name: Install system dependencies
       run: |
         sudo apt update
@@ -34,29 +58,23 @@ jobs:
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36 buildozer
 
-    # ✅ Initialize buildozer environment
-    - name: Initialize Buildozer
+    # 🔥 FORCE BUILDOZER TO USE SYSTEM SDK
+    - name: Configure Buildozer
       run: |
-        buildozer init || true
+        mkdir -p ~/.buildozer
 
-    # 🔥 FIX: Force Android license acceptance
-    - name: Inject Android Licenses
-      run: |
-        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+        echo "[buildozer]" > ~/.buildozer/global.ini
+        echo "log_level = 2" >> ~/.buildozer/global.ini
 
-        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-        echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+        echo "[android]" >> ~/.buildozer/global.ini
+        echo "sdk_path = /usr/local/lib/android/sdk" >> ~/.buildozer/global.ini
+        echo "ndk = 25b" >> ~/.buildozer/global.ini
 
-        echo "84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-        echo "5046675910430d4d256e4a95e34a3f12ca1638df" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-
-    # 🚀 Build APK
+    # 🚀 BUILD APK
     - name: Build APK
       run: |
-        yes | buildozer -v android debug
+        buildozer -v android debug
 
-    # 📦 Upload APK
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
