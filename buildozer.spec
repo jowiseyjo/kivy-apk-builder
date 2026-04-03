@@ -13,15 +13,9 @@ requirements = python3,kivy
 orientation = portrait
 fullscreen = 0
 
-# Android config (STABLE + FIXED)
 android.api = 33
 android.minapi = 21
-android.sdk = 33
 android.ndk = 25b
-android.build_tools_version = 33.0.2
-
 android.archs = arm64-v8a, armeabi-v7a
-android.permissions = INTERNET
 
-log_level = 2
-warn_on_root = 0
+android.permissions = INTERNET
