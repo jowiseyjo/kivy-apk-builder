@@ -7,6 +7,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -23,30 +27,32 @@ jobs:
         autoconf automake libtool m4 pkg-config cmake build-essential \
         libffi-dev libssl-dev
 
-    - name: Install Buildozer and dependencies
+    - name: Install Python tools
       run: |
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36
         pip install buildozer
 
-    - name: Install Android SDK (required tools)
+    - name: Setup Android SDK
       run: |
-        mkdir -p $HOME/android-sdk
-        export ANDROID_SDK_ROOT=$HOME/android-sdk
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT/cmdline-tools
 
-        yes | sdkmanager --licenses || true || true
+        curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+        unzip sdk.zip
+        mv cmdline-tools latest
+
+        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+
+        yes | sdkmanager --licenses
 
         sdkmanager "platform-tools" \
                    "platforms;android-33" \
-                   "build-tools;33.0.2" || true
-
-    - name: Accept Android SDK licenses (force)
-      run: |
-        yes | sdkmanager --licenses || true
+                   "build-tools;33.0.2"
 
     - name: Build APK
       run: |
-        buildozer init || true
+        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
         buildozer -v android debug
 
     - name: Upload APK
