@@ -9,14 +9,14 @@ requirements = python3,kivy
 orientation = portrait
 fullscreen = 0
 
-# Android config (STRICT VERSION LOCKING)
-android.api = 34
+# Android config (STRICT STABLE LOCK)
+android.api = 33
 android.minapi = 21
-android.sdk = 34
+android.sdk = 33
 android.ndk = 25b
-android.build_tools_version = 34.0.0
+android.build_tools_version = 33.0.2
 
-# STOP the auto-update to version 37
+# CRITICAL: Do not let buildozer try to update the SDK automatically
 android.skip_update = True
 android.accept_sdk_license = True
 
