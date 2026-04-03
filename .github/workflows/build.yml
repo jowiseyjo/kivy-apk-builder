@@ -29,21 +29,22 @@ jobs:
         pip install cython==0.29.36
         pip install buildozer
 
-    - name: Pre-accept Android licenses (GLOBAL FIX)
+    # 🔥 THIS IS THE REAL FIX
+    - name: Accept Android Licenses (MANUAL FIX)
       run: |
-        mkdir -p $HOME/.android
-        touch $HOME/.android/repositories.cfg
+        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
 
-        yes | buildozer android debug || true
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
 
     - name: Clean previous builds
       run: |
         rm -rf .buildozer
         rm -rf bin
 
-    - name: Build APK (FINAL)
+    - name: Build APK
       run: |
-        yes | buildozer -v android debug
+        buildozer -v android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
