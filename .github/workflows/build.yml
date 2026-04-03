@@ -16,30 +16,35 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
     - name: Install system dependencies
       run: |
         sudo apt update
         sudo apt install -y git zip unzip openjdk-17-jdk \
         autoconf automake libtool m4 pkg-config cmake build-essential \
-        libffi-dev libssl-dev
+        libffi-dev libssl-dev python3-setuptools
 
     - name: Install Python tools
       run: |
         pip install --upgrade pip setuptools wheel
-        pip install cython==0.29.36
-        pip install buildozer
+        pip install cython==0.29.36 buildozer
 
-    - name: Build APK (with License Acceptance)
+    - name: Inject Android Licenses (Fix for Build-Tools 37)
       run: |
-        # 1. Initialize the SDK directory structure
-        buildozer android pimpl
-        
-        # 2. Dynamically accept all licenses for the Buildozer-managed SDK
-        # This works regardless of whether it's Build-Tools 37 or 40.
-        yes | ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
-        
-        # 3. Run the actual build
-        buildozer -v android debug
+        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+        # These hashes tell the Android SDK that the licenses are already accepted
+        echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+        echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n5046675910430d4d256e4a95e34a3f12ca1638df" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+
+    - name: Build APK
+      run: |
+        # 'yes' ensures any unexpected prompts are answered with 'y'
+        yes | buildozer -v android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
