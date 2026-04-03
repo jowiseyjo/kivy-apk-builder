@@ -7,10 +7,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -33,27 +29,21 @@ jobs:
         pip install cython==0.29.36
         pip install buildozer
 
-    - name: Setup Android SDK
+    - name: Pre-accept Android licenses (GLOBAL FIX)
       run: |
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-        cd $ANDROID_SDK_ROOT/cmdline-tools
+        mkdir -p $HOME/.android
+        touch $HOME/.android/repositories.cfg
 
-        curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
-        unzip sdk.zip
-        mv cmdline-tools latest
+        yes | buildozer android debug || true
 
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-
-        yes | sdkmanager --licenses
-
-        sdkmanager "platform-tools" \
-                   "platforms;android-33" \
-                   "build-tools;33.0.2"
-
-    - name: Build APK
+    - name: Clean previous builds
       run: |
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-        buildozer -v android debug
+        rm -rf .buildozer
+        rm -rf bin
+
+    - name: Build APK (FINAL)
+      run: |
+        yes | buildozer -v android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
