@@ -29,21 +29,16 @@ jobs:
         pip install cython==0.29.36
         pip install buildozer
 
-    # 🔥 THIS IS THE REAL FIX
-    - name: Accept Android Licenses (MANUAL FIX)
+    - name: Build APK (with License Acceptance)
       run: |
-        mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-
-        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-        echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-
-    - name: Clean previous builds
-      run: |
-        rm -rf .buildozer
-        rm -rf bin
-
-    - name: Build APK
-      run: |
+        # 1. Initialize the SDK directory structure
+        buildozer android pimpl
+        
+        # 2. Dynamically accept all licenses for the Buildozer-managed SDK
+        # This works regardless of whether it's Build-Tools 37 or 40.
+        yes | ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager --licenses || true
+        
+        # 3. Run the actual build
         buildozer -v android debug
 
     - name: Upload APK
