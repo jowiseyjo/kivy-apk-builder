@@ -34,24 +34,24 @@ jobs:
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36 buildozer
 
-    - name: Force License Injection
+    - name: Magic License Hack (The Nuclear Option)
       run: |
-        # Define Buildozer's SDK path
-        export SDK_PATH=$HOME/.buildozer/android/platform/android-sdk
-        mkdir -p $SDK_PATH/licenses
+        # 1. Trigger Buildozer to CREATE the folders first (it will fail, that's fine)
+        buildozer android pimpl || true
         
-        # Inject the standard license hash
-        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $SDK_PATH/licenses/android-sdk-license
-        # Inject the preview license hash (this covers version 37)
-        echo "84831b9409646a918e30573bab4c9c91346d8abd" > $SDK_PATH/licenses/android-sdk-preview-license
-        
-        # Pre-download the tools so Buildozer doesn't have to ask
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_PATH "build-tools;33.0.2" "platforms;android-33" "platform-tools"
+        # 2. Find EVERY 'licenses' directory in the home folder and inject the keys
+        # This covers ~/.buildozer/android/platform/android-sdk/ and any variants
+        for dir in $(find $HOME -type d -name "android-sdk" 2>/dev/null); do
+          echo "Injecting licenses into $dir"
+          mkdir -p "$dir/licenses"
+          echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$dir/licenses/android-sdk-license"
+          echo -e "84831b9409646a918e30573bab4c9c91346d8abd\n5046675910430d4d256e4a95e34a3f12ca1638df" > "$dir/licenses/android-sdk-preview-license"
+        done
 
     - name: Build APK
       run: |
-        # Run buildozer in verbose mode
-        buildozer -v android debug
+        # We use 'yes' to auto-reply to the prompt if the injection somehow missed
+        yes | buildozer -v android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
