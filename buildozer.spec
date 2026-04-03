@@ -9,14 +9,14 @@ requirements = python3,kivy
 orientation = portrait
 fullscreen = 0
 
-# Android config (STABLE PINNED)
+# Android config
 android.api = 33
 android.minapi = 21
 android.sdk = 33
 android.ndk = 25b
 android.build_tools_version = 33.0.2
 
-# This prevents the auto-search for version 37
+# This tells Buildozer NOT to look for Build-Tools 37
 android.skip_update = True
 android.accept_sdk_license = True
 
