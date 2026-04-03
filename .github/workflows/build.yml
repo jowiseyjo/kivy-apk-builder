@@ -25,35 +25,33 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip autoconf automake libtool m4 pkg-config cmake build-essential libffi-dev libssl-dev
+        sudo apt install -y git zip unzip openjdk-17-jdk \
+        autoconf automake libtool m4 pkg-config cmake build-essential \
+        libffi-dev libssl-dev python3-setuptools
 
     - name: Install Buildozer
       run: |
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36 buildozer
 
-    - name: Pre-install Android SDK and Accept Licenses
+    - name: Force License Injection
       run: |
-        # 1. Define the path where Buildozer expects the SDK
-        export BZ_SDK_PATH=$HOME/.buildozer/android/platform/android-sdk
-        mkdir -p $BZ_SDK_PATH/licenses
-
-        # 2. Use the runner's built-in sdkmanager to install the specific version we want
-        # This installs it directly into Buildozer's expected path
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$BZ_SDK_PATH \
-          "platform-tools" \
-          "build-tools;33.0.2" \
-          "platforms;android-33"
-
-        # 3. Manually write the license files as a secondary fallback
-        echo -e "8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e" > $BZ_SDK_PATH/licenses/android-sdk-license
-        echo -e "84831b9409646a918e30573bab4c9c91346d8abd" > $BZ_SDK_PATH/licenses/android-sdk-preview-license
+        # Define Buildozer's SDK path
+        export SDK_PATH=$HOME/.buildozer/android/platform/android-sdk
+        mkdir -p $SDK_PATH/licenses
+        
+        # Inject the standard license hash
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $SDK_PATH/licenses/android-sdk-license
+        # Inject the preview license hash (this covers version 37)
+        echo "84831b9409646a918e30573bab4c9c91346d8abd" > $SDK_PATH/licenses/android-sdk-preview-license
+        
+        # Pre-download the tools so Buildozer doesn't have to ask
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$SDK_PATH "build-tools;33.0.2" "platforms;android-33" "platform-tools"
 
     - name: Build APK
       run: |
-        # We run buildozer with the pre-installed SDK
-        # The 'yes' prefix is a final safety net for any remaining prompts
-        yes | buildozer -v android debug
+        # Run buildozer in verbose mode
+        buildozer -v android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
