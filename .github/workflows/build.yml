@@ -8,10 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ANDROIDAPI: "33"
-      ANDROIDMINAPI: "21"
-      ANDROIDNDK: "25b"
-      ANDROIDSDK: "/usr/local/lib/android/sdk"
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
 
     steps:
     - name: Checkout repository
@@ -28,14 +26,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 🔥 INSTALL ANDROID SDK PROPERLY (SYSTEM LEVEL)
-    - name: Install Android SDK
+    # 🔥 INSTALL CLEAN ANDROID SDK (NO BUILD TOOLS 37 EVER)
+    - name: Install Android SDK manually
       run: |
+        sudo apt update
+        sudo apt install -y wget unzip
+
         sudo mkdir -p /usr/local/lib/android/sdk/cmdline-tools
         cd /usr/local/lib/android/sdk/cmdline-tools
 
-        sudo curl -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
-        sudo unzip tools.zip
+        sudo wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+        sudo unzip commandlinetools-linux-*.zip
         sudo mv cmdline-tools latest
 
         export PATH=/usr/local/lib/android/sdk/cmdline-tools/latest/bin:$PATH
@@ -53,26 +54,35 @@ jobs:
         autoconf automake libtool m4 pkg-config cmake build-essential \
         libffi-dev libssl-dev python3-setuptools
 
-    - name: Install Python tools
+    - name: Install Buildozer
       run: |
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36 buildozer
 
-    # 🔥 FORCE BUILDOZER TO USE SYSTEM SDK
-    - name: Configure Buildozer
+    # 🔥 CRITICAL FIX: FORCE BUILDOZER TO USE SYSTEM SDK ONLY
+    - name: Force Buildozer config
       run: |
         mkdir -p ~/.buildozer
 
-        echo "[buildozer]" > ~/.buildozer/global.ini
-        echo "log_level = 2" >> ~/.buildozer/global.ini
+        cat > ~/.buildozer/global.ini << EOF
+[buildozer]
+log_level = 2
 
-        echo "[android]" >> ~/.buildozer/global.ini
-        echo "sdk_path = /usr/local/lib/android/sdk" >> ~/.buildozer/global.ini
-        echo "ndk = 25b" >> ~/.buildozer/global.ini
+[app]
 
-    # 🚀 BUILD APK
+[android]
+sdk_path = /usr/local/lib/android/sdk
+ndk = 25b
+android.sdk_path = /usr/local/lib/android/sdk
+EOF
+
+    # 🚀 BUILD APK (NO AUTO DOWNLOADS)
     - name: Build APK
       run: |
+        export ANDROIDSDK=/usr/local/lib/android/sdk
+        export ANDROID_HOME=/usr/local/lib/android/sdk
+        export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+
         buildozer -v android debug
 
     - name: Upload APK
