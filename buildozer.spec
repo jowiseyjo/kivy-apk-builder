@@ -2,23 +2,23 @@
 title = FlashcardApp
 package.name = flashcard
 package.domain = org.education
+
 version = 0.1
+
 source.dir = .
 source.include_exts = py,kv,png,jpg,mp3,wav
+
 requirements = python3,kivy
+
 orientation = portrait
 fullscreen = 0
 
-# Android config
+# Android config (STABLE + FIXED)
 android.api = 33
 android.minapi = 21
 android.sdk = 33
 android.ndk = 25b
 android.build_tools_version = 33.0.2
-
-# This tells Buildozer NOT to look for Build-Tools 37
-android.skip_update = True
-android.accept_sdk_license = True
 
 android.archs = arm64-v8a, armeabi-v7a
 android.permissions = INTERNET
