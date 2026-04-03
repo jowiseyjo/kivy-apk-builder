@@ -23,11 +23,26 @@ jobs:
         autoconf automake libtool m4 pkg-config cmake build-essential \
         libffi-dev libssl-dev
 
-    - name: Install Buildozer
+    - name: Install Buildozer and dependencies
       run: |
         pip install --upgrade pip setuptools wheel
         pip install cython==0.29.36
         pip install buildozer
+
+    - name: Install Android SDK (required tools)
+      run: |
+        mkdir -p $HOME/android-sdk
+        export ANDROID_SDK_ROOT=$HOME/android-sdk
+
+        yes | sdkmanager --licenses || true || true
+
+        sdkmanager "platform-tools" \
+                   "platforms;android-33" \
+                   "build-tools;33.0.2" || true
+
+    - name: Accept Android SDK licenses (force)
+      run: |
+        yes | sdkmanager --licenses || true
 
     - name: Build APK
       run: |
